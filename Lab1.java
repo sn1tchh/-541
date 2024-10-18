@@ -7,5 +7,7 @@ public class Lab1 {
         System.out.println("Its works");
         /** one more lane */
         System.out.println("Ну ладно добавлю еще строку");
+        /** one more lane */
+        System.out.println("защищаюсь");
     }
 }
