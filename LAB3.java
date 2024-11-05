@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.sql.*;
 
 // Клас, що представляє ігрове поле
 class GameBoard {
@@ -18,6 +19,7 @@ class GameBoard {
             }
         }
     }
+    
     // Виведення поля на екран
     public void displayBoard() {
         for (int i = 0; i < size; i++) {
@@ -39,14 +41,12 @@ class GameBoard {
 
     // Перевірка на перемогу
     public boolean checkWin(char symbol) {
-        // Перевірка рядків і стовпців
         for (int i = 0; i < size; i++) {
             if ((board[i][0] == symbol && board[i][1] == symbol && board[i][2] == symbol) ||
                 (board[0][i] == symbol && board[1][i] == symbol && board[2][i] == symbol)) {
                 return true;
             }
         }
-        // Перевірка діагоналей
         if ((board[0][0] == symbol && board[1][1] == symbol && board[2][2] == symbol) ||
             (board[0][2] == symbol && board[1][1] == symbol && board[2][0] == symbol)) {
             return true;
@@ -79,17 +79,14 @@ class Player {
         this.scanner = new Scanner(System.in);
     }
 
-    // Отримання імені гравця
     public String getName() {
         return name;
     }
 
-    // Отримання символу гравця ('X' або 'O')
     public char getSymbol() {
         return symbol;
     }
 
-    // Запит на хід гравця
     public int[] makeMove() {
         System.out.println(name + ", введіть номер рядка та стовпця (0, 1 або 2): ");
         int row = scanner.nextInt();
@@ -101,6 +98,20 @@ class Player {
 // Основний клас для управління грою
 public class LAB3 {
     public static void main(String[] args) {
+        Db db = new Db();
+    Scanner scanner = new Scanner(System.in);
+
+    try {
+        System.out.print("Введіть ім'я користувача: ");
+        String username = scanner.nextLine();
+        System.out.print("Введіть пароль: ");
+        String password = scanner.nextLine();
+
+        if (!db.isUserExists(username) || !db.checkPassword(username, password)) {
+            System.out.println("Неправильне ім'я користувача або пароль.");
+            return;
+        }
+
         GameBoard gameBoard = new GameBoard();
         Player player1 = new Player("Гравець 1", 'X');
         Player player2 = new Player("Гравець 2", 'O');
@@ -111,13 +122,11 @@ public class LAB3 {
             gameBoard.displayBoard();
             int[] move = currentPlayer.makeMove();
 
-            // Перевірка коректності ходу
             while (!gameBoard.updateBoard(move[0], move[1], currentPlayer.getSymbol())) {
                 System.out.println("Неправильний хід! Спробуйте знову.");
                 move = currentPlayer.makeMove();
             }
 
-            // Перевірка на перемогу
             if (gameBoard.checkWin(currentPlayer.getSymbol())) {
                 gameWon = true;
                 gameBoard.displayBoard();
@@ -126,9 +135,63 @@ public class LAB3 {
                 gameBoard.displayBoard();
                 System.out.println("Нічия!");
             } else {
-                // Перемикаємо поточного гравця
                 currentPlayer = (currentPlayer == player1) ? player2 : player1;
             }
         }
+    } finally {
+        scanner.close(); // Закриття сканера для запобігання витоку ресурсів
+        db.close(); // Закриття з'єднання з базою даних
+        }   
+    }
+}
+
+// Клас для роботи з базою даних
+class Db {
+    String dbUrl = "jdbc:mysql://localhost:3306/BASE_for_XO?useSSL=false";
+    String user = "root";
+    String password = "xxx";
+    Connection con;
+
+    public Db() {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            this.con = DriverManager.getConnection(dbUrl, user, password);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    public void close() {
+        try {
+            con.close();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    public boolean isUserExists(String username) {
+        try {
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT count(*) FROM users WHERE username='" + username + "';");
+            if (rs.next() && rs.getInt(1) == 1) return true;
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return false;
+    }
+
+    public boolean checkPassword(String username, String password) {
+        try {
+            PreparedStatement stmt = con.prepareStatement("SELECT password FROM users WHERE username=?");
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                String storedPassword = rs.getString("password");
+                return storedPassword.equals(password);
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return false;
     }
 }
