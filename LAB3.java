@@ -101,21 +101,12 @@ public class LAB3 {
         Db db = new Db();
         Scanner scanner = new Scanner(System.in);
 
-        System.out.print("Введіть ім'я користувача: ");
-        String username = scanner.nextLine();
-        System.out.print("Введіть пароль: ");
-        String password = scanner.nextLine();
+        System.out.println("Реєстрація або вхід для двох гравців:");
 
-        if (!db.isUserExists(username) || !db.checkPassword(username, password)) {
-            System.out.println("Неправильне ім'я користувача або пароль.");
-            db.close();
-            scanner.close();
-            return;
-        }
+        Player player1 = registerOrLoginPlayer(db, scanner, "Гравець 1", 'X');
+        Player player2 = registerOrLoginPlayer(db, scanner, "Гравець 2", 'O');
 
         GameBoard gameBoard = new GameBoard();
-        Player player1 = new Player("Гравець 1", 'X');
-        Player player2 = new Player("Гравець 2", 'O');
         Player currentPlayer = player1;
 
         boolean gameWon = false;
@@ -142,6 +133,28 @@ public class LAB3 {
 
         db.close();
         scanner.close();
+    }
+
+    private static Player registerOrLoginPlayer(Db db, Scanner scanner, String playerName, char symbol) {
+        while (true) {
+            System.out.println(playerName + ": Введіть ім'я користувача: ");
+            String username = scanner.nextLine();
+            System.out.print(playerName + ": Введіть пароль: ");
+            String password = scanner.nextLine();
+
+            if (db.isUserExists(username)) {
+                if (db.checkPassword(username, password)) {
+                    System.out.println("Вхід успішний для " + playerName + ".");
+                    return new Player(username, symbol);
+                } else {
+                    System.out.println("Неправильний пароль. Спробуйте ще раз.");
+                }
+            } else {
+                db.registerUser(username, password);
+                System.out.println("Реєстрація успішна для " + playerName + ".");
+                return new Player(username, symbol);
+            }
+        }
     }
 }
 
@@ -175,12 +188,12 @@ class Db {
             ResultSet rs = stmt.executeQuery("SELECT count(*) FROM users WHERE username='" + username + "';");
             while (rs.next())
                 if (rs.getInt(1) == 1) return true;
-                else return false;
         } catch (Exception e) {
             System.out.println(e);
         }
-        return true;
+        return false;
     }
+
     public boolean checkPassword(String username, String password) {
         try {
             PreparedStatement stmt = con.prepareStatement("SELECT password FROM users WHERE username=?");
@@ -194,5 +207,16 @@ class Db {
             System.out.println(e);
         }
         return false;
+    }
+
+    public void registerUser(String username, String password) {
+        try {
+            PreparedStatement stmt = con.prepareStatement("INSERT INTO users (username, password) VALUES (?, ?)");
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
     }
 }
