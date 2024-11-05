@@ -15,7 +15,6 @@ public class LAB2 {
         }
     }
 
-    // Інші методи залишаються незмінними
     public static void print2DArray(int rows, int cols) {
         int[][] array = new int[rows][cols];
         int value = 1;
