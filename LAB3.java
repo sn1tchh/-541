@@ -99,9 +99,8 @@ class Player {
 public class LAB3 {
     public static void main(String[] args) {
         Db db = new Db();
-    Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in);
 
-    try {
         System.out.print("Введіть ім'я користувача: ");
         String username = scanner.nextLine();
         System.out.print("Введіть пароль: ");
@@ -109,6 +108,8 @@ public class LAB3 {
 
         if (!db.isUserExists(username) || !db.checkPassword(username, password)) {
             System.out.println("Неправильне ім'я користувача або пароль.");
+            db.close();
+            scanner.close();
             return;
         }
 
@@ -138,18 +139,17 @@ public class LAB3 {
                 currentPlayer = (currentPlayer == player1) ? player2 : player1;
             }
         }
-    } finally {
-        scanner.close(); // Закриття сканера для запобігання витоку ресурсів
-        db.close(); // Закриття з'єднання з базою даних
-        }   
+
+        db.close();
+        scanner.close();
     }
 }
 
 // Клас для роботи з базою даних
 class Db {
-    String dbUrl = "jdbc:mysql://localhost:3306/BASE_for_XO?useSSL=false";
+    String dbUrl = "jdbc:mysql://localhost:3306/myGAME?useSSL=false";
     String user = "root";
-    String password = "xxx";
+    String password = "1234";
     Connection con;
 
     public Db() {
@@ -173,13 +173,14 @@ class Db {
         try {
             Statement stmt = con.createStatement();
             ResultSet rs = stmt.executeQuery("SELECT count(*) FROM users WHERE username='" + username + "';");
-            if (rs.next() && rs.getInt(1) == 1) return true;
+            while (rs.next())
+                if (rs.getInt(1) == 1) return true;
+                else return false;
         } catch (Exception e) {
             System.out.println(e);
         }
-        return false;
+        return true;
     }
-
     public boolean checkPassword(String username, String password) {
         try {
             PreparedStatement stmt = con.prepareStatement("SELECT password FROM users WHERE username=?");
