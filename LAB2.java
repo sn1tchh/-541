@@ -31,7 +31,7 @@ public class LAB2 {
 
     public static void main(String[] args) {
         // Виклик методу для виведення ялинки
-        int levels = 6; // кількість рівнів ялинки
+        int levels = 8; // кількість рівнів ялинки
         System.out.println("Ялинка:");
         printTree(levels);
 
